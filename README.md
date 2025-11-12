@@ -25,39 +25,16 @@ Measure accuracy | ✅ Precision, recall, timeline plot
 
 ---
 
-## 🧩 System Overview
+## 🧩 System Workflow
 
-+-----------------------------+
-| Process & Resource Simulator|
-| (requests, holds, bursts) |
-+--------------+--------------+
-|
-v
-+-------------------+
-| Wait-For Graph |
-+--------+----------+
-|
-Classical | Tarjan SCC
-Deadlock 🧱 Detection
-|
-v
-+---------------------------------+
-| Deadlock timestamps (events) |
-| + hashed snapshots (y(t)) |
-+-----------------+---------------+
-|
-v
-Quantum-Inspired Period Finder
-- burst clustering
-- Rayleigh phase scan
-- continued fractions (Shor-style)
-|
-v
-Estimated period r̂
-|
-v
-+-------------------------------------+
-| Forecast upcoming deadlock windows |
+1. **Simulation**: The system simulates multiple processes and resources. Processes request and release resources in bursty, periodic patterns. Resource allocation and wait-for graphs are tracked at each time step.
+2. **Deadlock Detection**: At each tick, the system builds a wait-for graph and uses Tarjan's algorithm to detect strongly connected components (SCCs), identifying deadlocks.
+3. **State Encoding**: Each snapshot of the wait-for graph is hashed and encoded using modular exponentiation, producing a time series that reflects contention patterns.
+4. **Quantum-Inspired Period Estimation**:
+    - **Event-Driven**: If deadlock timestamps are available, the algorithm analyzes gaps between events using GCD, mode, and autocorrelation to estimate the period.
+    - **Phase Samples & Refinement**: Synthetic phase samples (fractions k/r) are generated and refined using continued fractions and LCM to confirm the period.
+    - **Fallback**: If no events, the algorithm analyzes the hashed state sequence for repeating patterns, using the same refinement process.
+5. **Forecasting**: Using the estimated period and last deadlock time, the system predicts future deadlock windows and evaluates forecast accuracy (precision/recall).
 
 ---
 
@@ -99,28 +76,37 @@ deadlock_forecast.py # simulation + Q-style estimator
 README.md # documentation
 timeline.png # generated results plot
 
-
 ---
 
-## 🧠 What Makes This "Quantum-Inspired"?
+## 🧠 How Does the Quantum-Inspired Algorithm Work?
 
-We **do not claim a laptop runs quantum circuits**.
+### Simulation & Deadlock Detection
+- Simulates processes and resources with periodic contention bursts.
+- Detects deadlocks using Tarjan's SCC algorithm on the wait-for graph.
 
-Instead we **simulate the logic** behind Shor's algorithm’s period-finding:
+### State Encoding
+- Each system state (wait-for graph) is hashed and encoded as a modular integer, producing a time series.
 
-- repeated system states → cyclic structure  
-- modular encoding of states  
-- phase-like samples → continued fractions  
-- integer period extraction (r̂)
+### Quantum-Inspired Period Estimation
+- **Step 1: Event-Driven Estimation**
+    - Analyzes deadlock timestamps to find gaps between events.
+    - Uses GCD, mode, and autocorrelation to estimate the period.
+- **Step 2: Phase Samples & Refinement**
+    - Generates synthetic phase samples (fractions k/r) for candidate period r.
+    - Uses continued fractions and LCM to refine and confirm the period.
+- **Step 3: Fallback to Hashed-Series Heuristic**
+    - If no deadlock events, analyzes the hashed state sequence for repeating patterns.
+    - Uses the same phase sample and refinement process to estimate the period.
 
-This explores **how quantum structure can aid predictive analysis** in concurrent systems.
+### Forecasting
+- Predicts future deadlock windows using the estimated period and last deadlock time.
+- Evaluates forecast accuracy (precision, recall, hits, misses).
 
 ---
 
 ## 📊 Results
 
 Outputs:
-
 - red ❌ marks = real deadlocks
 - shaded bands = predicted future deadlock windows
 - final accuracy metrics (precision/recall)
